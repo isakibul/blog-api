@@ -514,10 +514,10 @@ components:
       properties:
         createdAt:
           type: string
-          format: dateTime
+          format: date-time
         updatedAt:
           type: string
-          format: dateTime
+          format: date-time
       required: [createdAt, updatedAt]
     AuthorDTO:
       type: object
