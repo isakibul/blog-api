@@ -7,7 +7,7 @@ class DatabaseConnection {
     this.dbURL = dbURL;
   }
 
-  async read() {
+  async connect() {
     const dbStr = await fs.readFile(this.dbURL, { encoding: "utf8" });
     this.db = JSON.parse(dbStr);
   }
@@ -16,14 +16,6 @@ class DatabaseConnection {
     if (this.db) {
       await fs.writeFile(this.dbURL, JSON.stringify(this.db));
     }
-  }
-
-  async getDB() {
-    if (this.db) {
-      return this.db;
-    }
-    await this.read();
-    return this.db;
   }
 }
 

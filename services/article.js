@@ -1,17 +1,17 @@
 const Article = require("../models/Article");
+const databaseConnection = require("../db");
 
 const findArticles = async ({
   page = 1,
   limit = 5,
-  sortType = "asc",
+  sortType = "dsc",
   sortBy = "updatedAt",
   searchTerm = "",
 }) => {
-  const articleInstance = new Article();
-  await articleInstance.init();
+  const articleInstance = new Article(databaseConnection.db.articles);
   let articles;
 
-  // filter articles based on search term
+  // filter based on search term
   if (searchTerm) {
     articles = await articleInstance.search(searchTerm);
   } else {
@@ -19,6 +19,7 @@ const findArticles = async ({
   }
 
   // sorting
+  articles = [...articles];
   articles = await articleInstance.sort(articles, sortType, sortBy);
 
   // pagination
@@ -41,7 +42,7 @@ const transformArticles = ({ articles = [] }) => {
       id: transformed.authorId,
       // TODO: find author name - authorService
     };
-    transformed.link = `articles/${transformed.id}`;
+    transformed.link = `/articles/${transformed.id}`;
     delete transformed.body;
     delete transformed.authorId;
 

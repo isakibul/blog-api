@@ -5,13 +5,11 @@ const YAML = require("yamljs");
 const swaggerDoc = YAML.load("./swagger.yaml");
 const OpenApiValidator = require("express-openapi-validator");
 
-const connection = require("./db");
-const Article = require("./models/Article");
+const databaseConnection = require("./db");
 const articleService = require("./services/article");
 
 // express app
 const app = express();
-
 app.use(express.json());
 app.use("/docs", swaggerUI.serve, swaggerUI.setup(swaggerDoc));
 app.use(
@@ -26,53 +24,47 @@ app.get("/health", (_req, res) => {
 
 // articles
 app.get("/api/v1/articles", async (req, res) => {
-  // extract query params
+  // 1. extract query params
   const page = +req.query.page || 1;
   const limit = +req.query.limit || 10;
+  const sortType = req.query.sort_type || "dsc";
+  const sortBy = req.query.sort_by || "updatedAt";
+  const searchTerm = req.query.searchTerm || "";
 
-  // call article service to fetch articles
+  // 2. call article service to fetch all articles
   let { totalItems, totalPage, hasNext, hasPrev, articles } =
     await articleService.findArticles({
-      ...req.query,
       page,
       limit,
+      sortType,
+      sortBy,
+      searchTerm,
     });
 
-  // const skip = page * limit - limit;
-  // let resultedArticles = articles.slice(skip, skip + limit);
-  // const totalItems = articles.length;
-  // const totalPage = Math.ceil(totalItems / limit);
-
-  articles = articleService.transformArticles({ articles });
-
   const response = {
-    data: articles,
+    data: articleService.transformArticles({ articles }),
     pagination: {
       page,
       limit,
-      next: 3,
-      prev: 1,
-      totalItems,
       totalPage,
+      totalItems,
     },
     links: {
       self: req.url,
-      prev: `/articles?page=${page - 1}&limit=${limit}`,
-      next: `/articles?page=${page + 1}&limit=${limit}`,
     },
   };
 
   if (hasPrev) {
     response.pagination.prev = page - 1;
-    response.links.prev = `/articles?page=${page - 1}&limit=${limit}`;
+    response.links.prev = `${req.url}?page=${page - 1}&limit=${limit}`;
   }
 
   if (hasNext) {
     response.pagination.next = page + 1;
-    response.links.next = `/articles?page=${page + 1}&limit=${limit}`;
+    response.links.next = `${req.url}?page=${page + 1}&limit=${limit}`;
   }
 
-  // generate necessary responses
+  // 3. generate necessary responses
   res.status(200).json(response);
 });
 
@@ -115,6 +107,11 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(4000, () => {
-  console.log("listening on port 4000");
-});
+(async () => {
+  await databaseConnection.connect();
+  console.log("Database Connected");
+
+  app.listen(4000, () => {
+    console.log("Server is listening on port 4000");
+  });
+})();
