@@ -50,7 +50,23 @@ const transformArticles = ({ articles = [] }) => {
   });
 };
 
+const createArticle = async ({
+  title,
+  body,
+  authorId,
+  cover = "",
+  status = "draft",
+}) => {
+  const articleInstance = new Article(databaseConnection.db.articles);
+  const article = await articleInstance.create(
+    { title, body, authorId, cover, status },
+    databaseConnection
+  );
+  return article;
+};
+
 module.exports = {
   findArticles,
   transformArticles,
+  createArticle,
 };

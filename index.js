@@ -18,6 +18,14 @@ app.use(
   })
 );
 
+app.use((req, _res, next) => {
+  req.user = {
+    id: 888,
+    name: "Sakibul Islam",
+  };
+  next();
+});
+
 app.get("/health", (_req, res) => {
   res.status(200).json({ health: "Ok" });
 });
@@ -68,8 +76,31 @@ app.get("/api/v1/articles", async (req, res) => {
   res.status(200).json(response);
 });
 
-app.post("/api/v1/articles", (req, res) => {
-  res.status(200).json({ path: "/articles", method: "post" });
+app.post("/api/v1/articles", async (req, res) => {
+  // step 1: destructure the request body
+  const { title, body, cover, status } = req.body;
+
+  // step 2: invoke the service function
+  const article = await articleService.createArticle({
+    title,
+    body,
+    cover,
+    status,
+    authorId: req.user.id,
+  });
+
+  // step 3: generate response
+  const response = {
+    code: 201,
+    message: "Article created successfully",
+    data: article,
+    links: {
+      self: `${req.url}/${article.id}`,
+      author: `${req.url}/${article.id}/author`,
+      comment: `${req.url}/${article.id}/comments`,
+    },
+  };
+  res.status(201).json(response);
 });
 
 app.get("/api/v1/articles/:id", (req, res) => {
