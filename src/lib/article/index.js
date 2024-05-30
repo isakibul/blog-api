@@ -1,20 +1,49 @@
 const { Article } = require("../../model");
 
-const findAll = async ({
+const findAll = ({
   page = 1,
   limit = 5,
   sortType = "dsc",
-  sortKey = "updatedAt",
+  sortBy = "updatedAt",
   search = "",
 }) => {
-  const sortStr = `${sortType === "dsc" ? "-" : ""}${sortKey}`;
-  const articles = await Article.find({
-    title: { $regex: search, $options: "i" },
-  })
+  const sortStr = `${sortType === "dsc" ? "-" : ""}${sortBy}`;
+
+  const filter = { title: { $regex: search, $options: "i" } };
+
+  return Article.find(filter)
+    .populate({ path: "author", select: "name" })
     .sort(sortStr)
     .skip(page * limit - limit)
     .limit(limit);
-  return articles;
 };
 
-module.exports = { findAll };
+const count = ({ search = "" }) => {
+  const filter = {
+    title: { $regex: search, $options: "i" },
+  };
+  return Article.countDocuments(filter);
+};
+
+const create = ({ title, body = "", cover = "", status = "draft", author }) => {
+  if (!title || !author) {
+    const error = new Error("Invalid parameters");
+    error.status = 400;
+    throw error;
+  }
+
+  const article = new Article({
+    title,
+    body,
+    cover,
+    status,
+    author: author.id,
+  });
+  return article.save();
+};
+
+module.exports = {
+  findAll,
+  create,
+  count,
+};
