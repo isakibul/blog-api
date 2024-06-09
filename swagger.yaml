@@ -664,7 +664,7 @@ components:
       schema:
         type: string
         enum: [asc, dsc]
-        example: dsc
+        example: asc
     sortByParam:
       in: query
       name: sort_by
